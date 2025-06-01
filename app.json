@@ -31,7 +31,8 @@
         "googleMaps": {
           "apiKey": "AIzaSyAVGH1CDRM5yW4kMAAqrhg96fIIzTZIgGU"
         }
-      }
+      },
+      "package": "com.hussein.abbass.seniorapp"
     },
     "web": {
       "bundler": "metro",
@@ -52,6 +53,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "028af99f-8e70-4700-92f6-32ec231b5dfb"
+      }
+    },
+    "owner": "hussein.abbass"
   }
 }

@@ -18,6 +18,7 @@ const SearchDonors = () => {
   const [donors, setDonors] = useState([]);
   const [filteredDonors, setFilteredDonors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
 
   const [name, setName] = useState('');
   const [selectedBloodType, setSelectedBloodType] = useState('');
@@ -26,35 +27,57 @@ const SearchDonors = () => {
   const [suggestions, setSuggestions] = useState([]);
 
   useEffect(() => {
-    fetchDonors();
+    checkUserRole();
   }, []);
 
-  const fetchDonors = async () => {
-  try {
-    const token = await AsyncStorage.getItem('userToken');
-    const response = await fetch('https://seniorproject-1-3rbo.onrender.com/api/users', {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+  const checkUserRole = async () => {
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      const response = await fetch('https://seniorproject-1-3rbo.onrender.com/api/user', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-    const data = await response.json();
+      const data = await response.json();
+      console.log('user data', data);
 
-    console.log('Fetched Donors:', data);
+      // Check role access
+      if (data.role !== "1995" && data.role !== "1996") {
+        setAccessDenied(true);
+        setLoading(false);
+        return;
+      }
 
-    // set the users array, not the whole data object
-    setDonors(data.users);
-    setFilteredDonors(data.users);
-    setLoading(false);
-  } catch (error) {
-    console.error('Error fetching donors:', error);
-    setLoading(false);
-  }
-};
+      fetchDonors(token);
+    } catch (error) {
+      console.error('Error checking user role:', error);
+      setAccessDenied(true);
+      setLoading(false);
+    }
+  };
 
+  const fetchDonors = async (token) => {
+    try {
+      const response = await fetch('https://seniorproject-1-3rbo.onrender.com/api/users', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-  // Autocomplete for location input
+      const data = await response.json();
+
+      setDonors(data.users);
+      setFilteredDonors(data.users);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching donors:', error);
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (locationInput.trim() === '') {
       setSuggestions([]);
@@ -68,7 +91,6 @@ const SearchDonors = () => {
     setSuggestions(matches);
   }, [locationInput, donors]);
 
-  // Filter when user clicks the button
   const handleFilter = () => {
     let filtered = donors;
 
@@ -93,7 +115,7 @@ const SearchDonors = () => {
     <View style={styles.card}>
       <Text style={styles.name}>{item.name}</Text>
       <Text>Blood Type: {item.blood_type}</Text>
-      <Text>Phone: {item.phone}</Text>
+      <Text>Phone: {item.phone_number}</Text>
       {item.address && (
         <Text
           style={styles.linkText}
@@ -112,6 +134,14 @@ const SearchDonors = () => {
 
   if (loading) {
     return <ActivityIndicator style={{ flex: 1 }} size="large" color="#D32F2F" />;
+  }
+
+  if (accessDenied) {
+    return (
+      <View style={styles.accessDeniedContainer}>
+        <Text style={styles.accessDeniedText}>Access Denied: You do not have permission to view this page.</Text>
+      </View>
+    );
   }
 
   return (
@@ -158,7 +188,6 @@ const SearchDonors = () => {
         </ScrollView>
       )}
 
-      {/* Filter Button */}
       <TouchableOpacity style={styles.filterButton} onPress={handleFilter}>
         <Text style={styles.filterButtonText}>Apply Filters</Text>
       </TouchableOpacity>
@@ -241,5 +270,16 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  accessDeniedContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  accessDeniedText: {
+    color: 'red',
+    fontSize: 18,
+    textAlign: 'center',
   },
 });

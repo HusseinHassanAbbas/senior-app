@@ -1,16 +1,16 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from '../screens/home';
 import ProfileScreen from '../screens/profile';
 import RequestBloodScreen from '../screens/requestBlood';
 import NotificationsScreen from '../screens/notifications';
 import SearchDonorsScreen from '../screens/searchDonors';
+import { NotificationContext } from '../contexts/NotificationContext';
 
 const Tab = createBottomTabNavigator();
 
-// Keep your existing custom plus button
 const CustomPlusButton = ({ children, onPress }) => (
   <TouchableOpacity style={styles.plusButtonContainer} onPress={onPress}>
     <View style={styles.plusButton}>
@@ -20,6 +20,10 @@ const CustomPlusButton = ({ children, onPress }) => (
 );
 
 export default function BottomNavbar() {
+  const { unreadCount, setUnreadCount, fetchUnreadCount } = useContext(NotificationContext);
+
+  console.log('Unread count in BottomNavbar:', unreadCount);
+
   return (
     <Tab.Navigator
       initialRouteName="Home"
@@ -38,26 +42,34 @@ export default function BottomNavbar() {
           else if (route.name === 'Notifications') iconName = 'notifications';
           else if (route.name === 'SearchDonors') iconName = 'search';
 
-          if (iconName) {
-            return (
+          return (
+            <View>
               <Ionicons
                 name={iconName}
                 size={size}
                 color={focused ? '#D32F2F' : 'gray'}
               />
-            );
-          }
-
-          return null;
+              {route.name === 'Notifications' && unreadCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{unreadCount}</Text>
+                </View>
+              )}
+            </View>
+          );
         },
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Notifications" component={NotificationsScreen} />
-
-      
-
-      {/* ➕ Custom Center Button */}
+      <Tab.Screen
+        name="Notifications"
+        component={props => <NotificationsScreen {...props} refreshBadge={fetchUnreadCount} />}
+        listeners={{
+          tabPress: () => {
+            console.log('Notifications tab pressed - resetting unreadCount');
+            setUnreadCount(0);
+          }
+        }}
+      />
       <Tab.Screen
         name="RequestBlood"
         component={RequestBloodScreen}
@@ -68,10 +80,7 @@ export default function BottomNavbar() {
           tabBarButton: (props) => <CustomPlusButton {...props} />,
         }}
       />
-
-      {/* 🔍 NEW Search Button */}
       <Tab.Screen name="SearchDonors" component={SearchDonorsScreen} />
-
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
@@ -87,7 +96,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#2196F3', // Blue background
+    backgroundColor: '#2196F3',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -95,5 +104,23 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
     elevation: 10,
+  },
+  badge: {
+    position: 'absolute',
+    right: -6,
+    top: -3,
+    backgroundColor: 'red',
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 3,
+    zIndex: 10,
+  },
+  badgeText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
 });

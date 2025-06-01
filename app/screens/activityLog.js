@@ -57,6 +57,44 @@ export default function ActivityLog() {
 });
   };
 
+  const onComplete = (item) => {
+  Alert.alert(
+    'Mark as Complete',
+    'Are you sure you want to mark this request as completed?',
+    [
+      {
+        text: 'Cancel',
+        style: 'cancel',
+      },
+      {
+        text: 'Complete',
+        style: 'default',
+        onPress: async () => {
+          try {
+            const token = await AsyncStorage.getItem('userToken');
+            const res = await axios.put(
+              `https://seniorproject-1-3rbo.onrender.com/api/request/status/${item._id}`,
+              { done_status: 'complete' },
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+
+            console.log('Marked as complete:', res.data);
+            fetchUserRequests(); // Refresh list
+          } catch (err) {
+            console.error('Complete failed:', err.response?.data || err.message);
+            Alert.alert('Error', 'Failed to mark the request as completed.');
+          }
+        },
+      },
+    ]
+  );
+};
+
+
   const onDelete = (item) => {
   Alert.alert(
     'Confirm Deletion',
@@ -95,6 +133,8 @@ export default function ActivityLog() {
     ]
   );
 };
+
+  
 
   if (loading) {
     return (
@@ -146,10 +186,13 @@ export default function ActivityLog() {
               {/* Show Edit/Delete buttons if selected */}
               {isSelected && (
                 <View style={styles.buttonsContainer}>
-                  <Button title="Edit" color="#1976D2" onPress={() => onEdit(item)} />
-                  <View style={{ width: 10, marginTop: 10 }} />
-                  <Button title="Delete" color="#D32F2F" onPress={() => onDelete(item)} />
-                </View>
+  <Button title="Edit" color="#1976D2" onPress={() => onEdit(item)} />
+  <View style={{ height: 10 }} />
+  <Button title="Delete" color="#D32F2F" onPress={() => onDelete(item)} />
+  <View style={{ height: 10 }} />
+  <Button title="Complete" color="green" onPress={() => onComplete(item)} />
+</View>
+
               )}
             </TouchableOpacity>
           );
